@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lux VTT | Splendida Edition</title>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <title>Lux VTT | Ordo Zitae</title>
+    <link rel="icon" href="data:,">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -23,28 +24,24 @@
         </a>
         
         <div class="hud-controls">
-            <label class="btn-hud" title="Carregar Mapa (Imagem)">
+            <label class="btn-hud" title="Carregar Mapa">
                 <i class="fas fa-map"></i>
                 <input type="file" id="map-upload" accept="image/*" hidden>
             </label>
-            
-            <button class="btn-hud" onclick="vtt.saveSession()" title="Salvar Sessão (Local)">
+            <button class="btn-hud" onclick="vtt.saveSession()" title="Salvar Sessão">
                 <i class="fas fa-save"></i>
             </button>
-            <button class="btn-hud" onclick="vtt.exportSession()" title="Baixar Backup (.json)">
-                <i class="fas fa-file-download"></i>
-            </button>
             <label class="btn-hud" title="Carregar Backup">
-                <i class="fas fa-file-upload"></i>
+                <i class="fas fa-folder-open"></i>
                 <input type="file" id="session-upload" accept=".json" hidden>
             </label>
             
             <div class="separator"></div>
 
-            <button class="btn-hud highlight" onclick="vtt.openPlayerScreen()" title="Tela do Jogador (Pop-up)">
+            <button class="btn-hud highlight" onclick="vtt.openPlayerScreen()" title="Tela do Jogador">
                 <i class="fas fa-desktop"></i>
             </button>
-            <label class="sync-toggle" title="Sincronizar Visão">
+            <label class="sync-toggle" title="Sincronia">
                 <input type="checkbox" id="sync-toggle" onchange="vtt.toggleSync()">
                 <span>SYNC</span>
             </label>
@@ -69,152 +66,145 @@
             <button class="btn-hud" onclick="vtt.setTool('eraser')" id="btn-eraser" title="Borracha (E)">
                 <i class="fas fa-eraser"></i>
             </button>
-            
             <div class="brush-controls">
-                <input type="color" id="brush-color" value="#ff0000" class="color-picker" title="Cor">
-                <input type="range" id="brush-size" min="2" max="50" value="5" title="Tamanho" oninput="vtt.updateBrushSize(this.value)">
+                <input type="color" id="brush-color" value="#ef4444">
+                <input type="range" id="brush-size" min="2" max="50" value="5" oninput="vtt.local.brushSize = this.value">
             </div>
-
             <button class="btn-hud danger" onclick="vtt.clearDrawings()" title="Limpar Desenhos">
-                <i class="fas fa-trash"></i>
+                <i class="fas fa-trash-alt"></i>
             </button>
             
             <div class="separator"></div>
 
-            <button class="btn-hud" onclick="vtt.toggleFogMenu()" id="btn-fog" title="Névoa de Guerra">
-                <i class="fas fa-eye-slash"></i>
+            <button class="btn-hud wall-btn" onclick="vtt.setTool('wall')" id="btn-wall" title="Parede (Bloqueia Luz)">
+                <i class="fas fa-dungeon"></i>
             </button>
-            
-            <div class="fog-controls" id="fog-controls">
-                <button onclick="vtt.setTool('fog-reveal')" title="Revelar Área">Revelar</button>
-                <button onclick="vtt.setTool('fog-hide')" title="Esconder Área">Esconder</button>
-                <button onclick="vtt.resetFog()" class="danger">Reset</button>
-                <div class="slider-container">
-                    <small>Opacidade GM</small>
-                    <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="vtt.setDmOpacity(this.value)">
-                </div>
-            </div>
+            <button class="btn-hud" onclick="vtt.undoLastWall()" title="Desfazer Parede">
+                <i class="fas fa-undo"></i>
+            </button>
+            <button class="btn-hud danger" onclick="vtt.clearWalls()" title="Limpar Paredes">
+                <i class="fas fa-bomb"></i>
+            </button>
         </div>
     </header>
 
     <main class="game-viewport">
         <canvas id="game-canvas"></canvas>
-        <div id="fx-rain" class="fx-layer fx-rain hidden"></div>
-        <div id="fx-vignette" class="fx-layer fx-vignette hidden"></div>
     </main>
 
     <aside class="hud-sidebar">
         <div class="sidebar-tabs">
-            <button onclick="vtt.openTab('tokens', this)" class="active" title="Tokens"><i class="fas fa-chess-pawn"></i></button>
+            <button onclick="vtt.openTab('tokens', this)" class="active" title="Tokens"><i class="fas fa-users"></i></button>
             <button onclick="vtt.openTab('init', this)" title="Iniciativa"><i class="fas fa-list-ol"></i></button>
             <button onclick="vtt.openTab('dice', this)" title="Dados"><i class="fas fa-dice-d20"></i></button>
-            <button onclick="vtt.openTab('notes', this)" title="Anotações"><i class="fas fa-book"></i></button>
-            <button onclick="vtt.openTab('atmos', this)" title="Efeitos"><i class="fas fa-cloud-moon"></i></button>
+            <button onclick="vtt.openTab('config', this)" title="Config"><i class="fas fa-cog"></i></button>
         </div>
 
         <div id="tab-tokens" class="sidebar-content active">
             <h3>TOKENS</h3>
-            <div class="add-token-row">
+            <div class="add-token-box">
                 <input type="text" id="new-token-name" placeholder="Nome">
-                <label class="btn-small"><i class="fas fa-image"></i><input type="file" id="token-upload" hidden></label>
-                <button class="btn-small action" onclick="vtt.addToken()"><i class="fas fa-plus"></i></button>
+                <div class="row">
+                    <label class="file-btn">
+                        <i class="fas fa-image"></i> Imagem
+                        <input type="file" id="token-upload" hidden>
+                    </label>
+                    <button class="action-btn" onclick="vtt.addToken()">Add</button>
+                </div>
             </div>
             
             <div id="token-controls" class="token-controls hidden">
-                <span id="sel-token-name" style="color:var(--accent); font-weight:bold;">Token</span>
-                <div class="row">
-                    <button class="btn-xs" onclick="vtt.resizeToken(-0.5)">- Tam</button>
-                    <button class="btn-xs" onclick="vtt.resizeToken(0.5)">+ Tam</button>
-                    <button class="btn-xs delete" onclick="vtt.deleteToken()"><i class="fas fa-trash"></i></button>
+                <h4 id="sel-token-name">Token</h4>
+                
+                <div class="control-group">
+                    <label>Tamanho</label>
+                    <div class="row">
+                        <button onclick="vtt.resizeToken(-0.5)">-</button>
+                        <button onclick="vtt.resizeToken(0.5)">+</button>
+                    </div>
                 </div>
+
+                <div class="control-group">
+                    <label>Alcance Luz</label>
+                    <input type="range" min="0" max="30" step="1" value="0" id="light-slider" oninput="vtt.updateTokenData('lightRadius', this.value)">
+                    <span id="light-val" class="value-badge">0m</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Formato</label>
+                    <select id="light-type" onchange="vtt.updateTokenData('lightType', this.value)" style="width:100%; padding:5px; background:#1e293b; color:#fff; border:1px solid #334155;">
+                        <option value="circle">Omni (Círculo)</option>
+                        <option value="cone">Lanterna (Cone)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Rotação</label>
+                    <input type="range" min="0" max="360" step="5" value="0" id="light-rotation" oninput="vtt.updateTokenData('rotation', this.value)">
+                </div>
+
+                <button class="delete-btn" onclick="vtt.deleteToken()">Remover</button>
             </div>
+
             <div id="token-list" class="token-list"></div>
         </div>
 
         <div id="tab-init" class="sidebar-content">
-            <h3>ORDEM</h3>
-            <div class="add-token-row">
-                <input type="text" id="init-name" placeholder="Nome">
-                <input type="number" id="init-val" placeholder="Val" style="width: 50px;">
-                <button class="btn-small action" onclick="vtt.addInitiative()"><i class="fas fa-plus"></i></button>
+            <h3>ORDEM / INICIATIVA</h3>
+            <div class="add-token-box">
+                <div class="row">
+                    <input type="text" id="init-name" placeholder="Nome" style="flex:2">
+                    <input type="number" id="init-val" placeholder="Val" style="flex:1">
+                </div>
+                <button class="action-btn full-width" onclick="vtt.addInitiative()" style="margin-top:5px;">Adicionar</button>
             </div>
-            <div class="init-controls">
-                <button class="btn-small full-width highlight" onclick="vtt.nextTurn()">
+            
+            <div class="init-actions">
+                <button class="btn-hud highlight full-width" onclick="vtt.nextTurn()" style="width:100%; justify-content:center; gap:10px; margin-bottom:10px;">
                     <i class="fas fa-step-forward"></i> PRÓXIMO TURNO
                 </button>
+                <div class="row">
+                    <button class="file-btn" onclick="vtt.sortInitiative()">Ordenar</button>
+                    <button class="delete-btn" onclick="vtt.clearInitiative()" style="width:auto; flex:1">Limpar</button>
+                </div>
             </div>
-            <div class="row" style="margin-bottom:10px;">
-                <button class="btn-xs" onclick="vtt.sortInitiative()" style="flex:1">Ordenar</button>
-                <button class="btn-xs delete" onclick="vtt.clearInitiative()" style="flex:1">Limpar</button>
-            </div>
+
             <div id="init-list" class="init-list"></div>
         </div>
 
         <div id="tab-dice" class="sidebar-content">
-            <h3>ROLAGEM</h3>
+            <h3>DADOS</h3>
             <div class="dice-grid">
-                <button onclick="vtt.roll('1d4')">d4</button>
-                <button onclick="vtt.roll('1d6')">d6</button>
-                <button onclick="vtt.roll('1d8')">d8</button>
-                <button onclick="vtt.roll('1d10')">d10</button>
-                <button onclick="vtt.roll('1d12')">d12</button>
                 <button onclick="vtt.roll('1d20')">d20</button>
-                <button onclick="vtt.roll('1d100')">d100</button>
-                <button onclick="vtt.roll('2d20')">2d20</button>
+                <button onclick="vtt.roll('1d12')">d12</button>
+                <button onclick="vtt.roll('1d10')">d10</button>
+                <button onclick="vtt.roll('1d8')">d8</button>
+                <button onclick="vtt.roll('1d6')">d6</button>
+                <button onclick="vtt.roll('1d4')">d4</button>
             </div>
-            <div class="custom-roll-box">
-                <input type="text" id="custom-formula" placeholder="Ex: 8d6+10">
+            <div class="custom-roll">
+                <input type="text" id="custom-formula" placeholder="Ex: 2d8+5">
                 <button onclick="vtt.rollCustom()"><i class="fas fa-paper-plane"></i></button>
             </div>
             <div class="log-area" id="dice-log"></div>
-            <button class="btn-small full-width" onclick="vtt.clearLog()" style="margin-top:5px;">Limpar Log</button>
+            <button class="clear-log-btn" onclick="document.getElementById('dice-log').innerHTML=''">Limpar Log</button>
         </div>
 
-        <div id="tab-notes" class="sidebar-content">
-            <h3>DIÁRIO DE MISSÃO</h3>
-            <textarea id="notes-area" class="notes-area" placeholder="Escreva aqui..." oninput="vtt.saveNotes()"></textarea>
-            
-            <h3>ARQUIVOS VINCULADOS</h3>
-            <div class="add-token-row">
-                <label class="btn-small full-width">
-                    <i class="fas fa-paperclip"></i> Anexar Arquivo
-                    <input type="file" id="note-file-upload" hidden>
-                </label>
+        <div id="tab-config" class="sidebar-content">
+            <h3>CONFIGURAÇÃO</h3>
+            <div class="config-item">
+                <label>Nível de Escuridão</label>
+                <input type="range" min="0" max="1" step="0.05" value="0.95" oninput="vtt.setAmbientLight(this.value)">
             </div>
-            <div id="file-list" class="file-list"></div>
-        </div>
-
-        <div id="tab-atmos" class="sidebar-content">
-            <h3>VISUAL</h3>
-            <div class="fx-options">
-                <label><input type="checkbox" onchange="vtt.toggleRain()"> Chuva</label>
-                <label><input type="checkbox" onchange="vtt.toggleVignette()" id="check-vig"> Vinheta</label>
-                <label><input type="checkbox" onchange="vtt.toggleFogVis()"> Ver Névoa (Mestre)</label>
-                <label><input type="checkbox" onchange="vtt.toggleGrid()" checked> Grid</label>
+            <div class="config-check">
+                <label><input type="checkbox" onchange="vtt.toggleGrid()" checked> Mostrar Grid</label>
             </div>
-            
-            <div class="slider-block">
-                <span>Intensidade Vinheta</span>
-                <input type="range" id="vig-intensity" min="0" max="1" step="0.1" value="0.8" oninput="vtt.updateVignetteOpacity()">
+            <div class="config-check">
+                <label><input type="checkbox" onchange="vtt.toggleWallsVis()" checked> Ver Paredes (Mestre)</label>
             </div>
-
-            <h3>MESA DE SOM</h3>
-            <div class="volume-slider">
-                <i class="fas fa-volume-down"></i>
-                <input type="range" id="global-volume" min="0" max="1" step="0.1" value="0.5" oninput="vtt.updateVolume()">
-            </div>
-            <div class="add-token-row">
-                <label class="btn-small full-width">
-                    <i class="fas fa-music"></i> Carregar Áudio
-                    <input type="file" id="sound-file" accept="audio/*" hidden>
-                </label>
-            </div>
-            <div id="sound-list" class="sound-list"></div>
         </div>
     </aside>
 
     <script src="script.js"></script>
 </body>
-
 </html>
-
